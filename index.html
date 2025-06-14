@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Pixel RPG - Level Editor & Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🎮 Retro Pixel RPG</h1>
+            <nav>
+                <button id="gameMode" class="nav-btn active">Game Mode</button>
+                <button id="editorMode" class="nav-btn">Level Editor</button>
+                <button id="assetGen" class="nav-btn">Asset Generator</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Game View -->
+            <div id="gameView" class="view active">
+                <div id="gameContainer">
+                    <canvas id="gameCanvas" width="800" height="600"></canvas>
+                    <div id="gameUI">
+                        <div id="playerStats">
+                            <div class="stat">
+                                <span>HP:</span>
+                                <div class="health-bar">
+                                    <div id="healthFill" class="health-fill"></div>
+                                </div>
+                            </div>
+                            <div class="stat">
+                                <span>Level:</span>
+                                <span id="playerLevel">1</span>
+                            </div>
+                        </div>
+                        <div id="inventory">
+                            <button id="inventoryBtn">📦 Inventory</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="gameControls">
+                    <p>Use WASD or Arrow Keys to move</p>
+                    <button id="pauseBtn">⏸️ Pause</button>
+                    <button id="saveGameBtn">💾 Save Game</button>
+                </div>
+            </div>
+
+            <!-- Editor View -->
+            <div id="editorView" class="view">
+                <div id="editorContainer">
+                    <div id="editorToolbar">
+                        <div class="tool-group">
+                            <button id="brushTool" class="tool-btn active">🖌️ Brush</button>
+                            <button id="eraseTool" class="tool-btn">🧽 Erase</button>
+                            <button id="fillTool" class="tool-btn">🪣 Fill</button>
+                        </div>
+                        <div class="tool-group">
+                            <label>Layer:</label>
+                            <select id="layerSelect">
+                                <option value="background">Background</option>
+                                <option value="objects">Objects</option>
+                                <option value="collision">Collision</option>
+                            </select>
+                        </div>
+                        <div class="tool-group">
+                            <button id="newMapBtn">📄 New Map</button>
+                            <button id="saveMapBtn">💾 Save Map</button>
+                            <button id="loadMapBtn">📁 Load Map</button>
+                        </div>
+                    </div>
+                    <div id="editorMain">
+                        <div id="tilesetPanel">
+                            <h3>Tileset</h3>
+                            <div id="tilesetGrid"></div>
+                        </div>
+                        <div id="editorCanvas">
+                            <canvas id="levelCanvas" width="800" height="600"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asset Generator View -->
+            <div id="assetView" class="view">
+                <div id="assetContainer">
+                    <div id="assetGenerator">
+                        <h3>🎨 AI Asset Generator</h3>
+                        <div class="asset-form">
+                            <div class="form-group">
+                                <label for="assetPrompt">Asset Description:</label>
+                                <input type="text" id="assetPrompt" placeholder="e.g. medieval stone castle wall tile, pixel art style">
+                            </div>
+                            <div class="form-group">
+                                <label for="assetType">Asset Type:</label>
+                                <select id="assetType">
+                                    <option value="tile">Tile (32x32)</option>
+                                    <option value="character">Character (32x48)</option>
+                                    <option value="item">Item (24x24)</option>
+                                    <option value="object">Object (64x64)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="transparentBg" checked>
+                                    Transparent Background
+                                </label>
+                            </div>
+                            <button id="generateAssetBtn">✨ Generate Asset</button>
+                        </div>
+                        <div id="generatedAsset" style="display: none;">
+                            <h4>Generated Asset:</h4>
+                            <div id="assetPreview"></div>
+                            <div class="asset-actions">
+                                <button id="addToTilesetBtn">Add to Tileset</button>
+                                <button id="downloadAssetBtn">Download</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="assetLibrary">
+                        <h3>📚 Asset Library</h3>
+                        <div id="assetGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Generating asset...</p>
+    </div>
+
+    <script type="module" src="game.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
