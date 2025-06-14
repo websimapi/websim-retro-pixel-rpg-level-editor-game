@@ -1,7 +1,7 @@
 export class Editor {
     constructor() {
-        this.canvas = document.getElementById('levelCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.container = document.getElementById('levelCanvas');
+        this.renderer = null;
         this.active = false;
         
         this.currentTool = 'brush';
@@ -35,17 +35,17 @@ export class Editor {
         });
         
         // Canvas interaction
-        this.canvas.addEventListener('mousedown', (e) => {
+        this.container.addEventListener('mousedown', (e) => {
             if (!this.active) return;
             this.startDrawing(e);
         });
         
-        this.canvas.addEventListener('mousemove', (e) => {
+        this.container.addEventListener('mousemove', (e) => {
             if (!this.active) return;
             this.draw(e);
         });
         
-        this.canvas.addEventListener('mouseup', () => {
+        this.container.addEventListener('mouseup', () => {
             this.stopDrawing();
         });
         
@@ -77,8 +77,15 @@ export class Editor {
     
     activate() {
         this.active = true;
-        this.map = window.game.map; // Get reference to main game map
+        this.map = window.game.map;
         this.tileset = this.map.tileset;
+        
+        // Create 3D renderer for editor if it doesn't exist
+        if (!this.renderer) {
+            const { Renderer } = await import('./renderer.js');
+            this.renderer = new Renderer(this.container);
+        }
+        
         this.render();
     }
     
@@ -138,7 +145,7 @@ export class Editor {
     }
     
     getMousePos(e) {
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this.container.getBoundingClientRect();
         const x = Math.floor((e.clientX - rect.left) / 32);
         const y = Math.floor((e.clientY - rect.top) / 32);
         return { x, y };
@@ -218,47 +225,12 @@ export class Editor {
     }
     
     render() {
-        if (!this.map || !this.tileset) return;
+        if (!this.map || !this.tileset || !this.renderer) return;
         
-        // Clear canvas
-        this.ctx.fillStyle = '#222';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Calculate visible area
-        const tilesX = Math.ceil(this.canvas.width / 32);
-        const tilesY = Math.ceil(this.canvas.height / 32);
-        
-        // Render layers
-        const layerOrder = ['background', 'objects'];
-        
-        for (let layer of layerOrder) {
-            // Skip collision layer in normal view
-            if (layer === 'collision' && this.currentLayer !== 'collision') continue;
-            
-            for (let y = 0; y < tilesY && y < this.map.height; y++) {
-                for (let x = 0; x < tilesX && x < this.map.width; x++) {
-                    const tileId = this.map.getTile(layer, x, y);
-                    if (tileId > 0) {
-                        this.renderTile(tileId, x * 32, y * 32);
-                    }
-                }
-            }
-        }
-        
-        // Render collision overlay if collision layer is selected
-        if (this.currentLayer === 'collision') {
-            this.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-            for (let y = 0; y < tilesY && y < this.map.height; y++) {
-                for (let x = 0; x < tilesX && x < this.map.width; x++) {
-                    if (this.map.getTile('collision', x, y) === 1) {
-                        this.ctx.fillRect(x * 32, y * 32, 32, 32);
-                    }
-                }
-            }
-        }
-        
-        // Draw grid
-        this.drawGrid();
+        // Clear and render map in 3D
+        this.renderer.clear('#222');
+        this.map.render(this.renderer);
+        this.renderer.render();
     }
     
     renderTile(tileId, x, y) {
@@ -343,4 +315,3 @@ export class Editor {
         input.click();
     }
 }
-

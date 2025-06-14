@@ -7,17 +7,16 @@ import { UI } from './ui.js';
 
 class Game {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.gameContainer = document.getElementById('gameCanvas');
         
-        this.renderer = new Renderer(this.ctx);
-        this.player = new Player(400, 300);
+        this.renderer = new Renderer(this.gameContainer);
+        this.player = new Player(0, 0); // Start at world center
         this.map = new Map();
         this.editor = new Editor();
         this.assetManager = new AssetManager();
         this.ui = new UI();
         
-        this.gameState = 'playing'; // playing, paused, editor
+        this.gameState = 'playing';
         this.lastTime = 0;
         this.keys = {};
         
@@ -64,7 +63,7 @@ class Game {
         });
         
         // Prevent context menu on canvas
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        this.gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
     }
     
     handleKeyDown(e) {
@@ -166,39 +165,15 @@ class Game {
     }
     
     render() {
-        // Clear canvas
-        this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Calculate camera offset based on player position
-        const camera = {
-            x: this.canvas.width / 2 - this.player.x,
-            y: this.canvas.height / 2 - this.player.y
-        };
+        // Clear and set background
+        this.renderer.clear('#1a1a2e');
         
         // Render game world
-        this.ctx.save();
-        this.ctx.translate(camera.x, camera.y);
-        
         this.map.render(this.renderer);
         this.player.render(this.renderer);
         
-        this.ctx.restore();
-        
-        // Render UI overlay
-        this.renderGameUI();
-    }
-    
-    renderGameUI() {
-        // Draw minimap
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(this.canvas.width - 150, 10, 140, 100);
-        this.ctx.strokeStyle = '#00ff88';
-        this.ctx.strokeRect(this.canvas.width - 150, 10, 140, 100);
-        
-        // Draw player dot on minimap
-        this.ctx.fillStyle = '#ff4444';
-        this.ctx.fillRect(this.canvas.width - 80, 55, 4, 4);
+        // Render the 3D scene with pixel shader
+        this.renderer.render();
     }
     
     saveGame() {
@@ -269,4 +244,3 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-

@@ -1,7 +1,10 @@
+import * as THREE from 'three';
+
 export class Player {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.z = 0;
         this.width = 32;
         this.height = 48;
         this.vx = 0;
@@ -13,6 +16,7 @@ export class Player {
         this.experience = 0;
         
         this.sprite = null;
+        this.mesh = null;
         this.animationFrame = 0;
         this.animationTime = 0;
         this.direction = 'down'; // up, down, left, right
@@ -81,16 +85,58 @@ export class Player {
             this.y = oldY;
         }
         
-        // Update animation
-        if (this.vx !== 0 || this.vy !== 0) {
-            this.animationTime += deltaTime;
-            if (this.animationTime > 0.2) {
-                this.animationFrame = (this.animationFrame + 1) % 4;
-                this.animationTime = 0;
+        // Update 3D mesh position
+        if (this.mesh) {
+            this.mesh.position.set(this.x, this.z + this.height/2, this.y);
+            
+            // Update sprite animation
+            if (this.vx !== 0 || this.vy !== 0) {
+                this.animationTime += deltaTime;
+                if (this.animationTime > 0.2) {
+                    this.animationFrame = (this.animationFrame + 1) % 4;
+                    this.animationTime = 0;
+                    this.updateSpriteTexture();
+                }
+            } else {
+                this.animationFrame = 0;
+                this.updateSpriteTexture();
             }
-        } else {
-            this.animationFrame = 0;
         }
+    }
+    
+    updateSpriteTexture() {
+        if (!this.sprite || !this.mesh) return;
+        
+        // Create new texture with current animation frame
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 48;
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate sprite position based on direction and animation frame
+        let spriteX = this.animationFrame * 32;
+        let spriteY = 0;
+        
+        switch(this.direction) {
+            case 'down': spriteY = 0; break;
+            case 'left': spriteY = 48; break;
+            case 'right': spriteY = 96; break;
+            case 'up': spriteY = 144; break;
+        }
+        
+        ctx.drawImage(
+            this.sprite,
+            spriteX, spriteY, 32, 48,
+            0, 0, 32, 48
+        );
+        
+        // Update mesh texture
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+        texture.generateMipmaps = false;
+        this.mesh.material.map = texture;
+        this.mesh.material.needsUpdate = true;
     }
     
     checkCollision(map) {
@@ -102,8 +148,27 @@ export class Player {
     }
     
     render(renderer) {
+        if (!this.mesh && this.sprite) {
+            // Create 3D mesh for player
+            this.mesh = renderer.createSpriteMesh(
+                this.createCurrentFrameCanvas(), 
+                this.x, this.y, this.z, 
+                this.width, this.height
+            );
+            renderer.addToScene(this.mesh);
+        }
+        
+        // Update camera to follow player
+        renderer.updateCamera(this.x, this.y);
+    }
+    
+    createCurrentFrameCanvas() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 48;
+        const ctx = canvas.getContext('2d');
+        
         if (this.sprite) {
-            // Calculate sprite position based on direction and animation frame
             let spriteX = this.animationFrame * 32;
             let spriteY = 0;
             
@@ -114,18 +179,18 @@ export class Player {
                 case 'up': spriteY = 144; break;
             }
             
-            renderer.ctx.drawImage(
+            ctx.drawImage(
                 this.sprite,
                 spriteX, spriteY, 32, 48,
-                this.x - 16, this.y - 24, 32, 48
+                0, 0, 32, 48
             );
         } else {
             // Fallback rectangle
-            renderer.drawRect(this.x - 8, this.y - 12, 16, 24, '#ff4444');
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(8, 12, 16, 36);
         }
         
-        // Debug: Draw collision box
-        // renderer.drawRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height, 'rgba(255, 0, 0, 0.3)');
+        return canvas;
     }
     
     serialize() {
@@ -148,4 +213,3 @@ export class Player {
         this.experience = data.experience;
     }
 }
-

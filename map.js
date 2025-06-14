@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class Map {
     constructor() {
         this.width = 50;
@@ -12,6 +14,7 @@ export class Map {
         };
         
         this.tileset = null;
+        this.tileMeshes = [];
         this.generateDefaultMap();
         this.loadTileset();
     }
@@ -125,34 +128,81 @@ export class Map {
     render(renderer) {
         if (!this.tileset) return;
         
+        // Clear existing meshes if they exist
+        this.clearMeshes(renderer);
+        
+        // Generate 3D meshes for visible tiles
+        this.generateTileMeshes(renderer);
+    }
+    
+    clearMeshes(renderer) {
+        this.tileMeshes.forEach(mesh => {
+            renderer.removeFromScene(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        this.tileMeshes = [];
+    }
+    
+    generateTileMeshes(renderer) {
         // Calculate visible area (basic culling)
-        const startX = Math.max(0, Math.floor(-renderer.ctx.getTransform().e / this.tileSize) - 1);
-        const endX = Math.min(this.width, startX + Math.ceil(renderer.ctx.canvas.width / this.tileSize) + 2);
-        const startY = Math.max(0, Math.floor(-renderer.ctx.getTransform().f / this.tileSize) - 1);
-        const endY = Math.min(this.height, startY + Math.ceil(renderer.ctx.canvas.height / this.tileSize) + 2);
+        const margin = 5;
+        const startX = Math.max(0, -margin);
+        const endX = Math.min(this.width, this.width + margin);
+        const startY = Math.max(0, -margin);
+        const endY = Math.min(this.height, this.height + margin);
         
-        // Render layers in order
-        const layerOrder = ['background', 'objects'];
+        // Create tile meshes for each layer
+        const layerHeights = {
+            background: 0,
+            objects: 0.5,
+            collision: 0 // collision layer is invisible
+        };
         
-        for (let layer of layerOrder) {
+        for (let layer of ['background', 'objects']) {
             for (let y = startY; y < endY; y++) {
                 for (let x = startX; x < endX; x++) {
                     const tileId = this.getTile(layer, x, y);
                     if (tileId > 0) {
-                        this.renderTile(renderer, tileId, x * this.tileSize, y * this.tileSize);
+                        const tileCanvas = this.createTileCanvas(tileId);
+                        const height = layer === 'objects' ? 2 : 0.1;
+                        const mesh = renderer.createTileMesh(
+                            tileCanvas,
+                            x * this.tileSize - this.width * this.tileSize / 2,
+                            y * this.tileSize - this.height * this.tileSize / 2,
+                            layerHeights[layer],
+                            height
+                        );
+                        
+                        renderer.addToScene(mesh);
+                        this.tileMeshes.push(mesh);
                     }
                 }
             }
         }
     }
     
-    renderTile(renderer, tileId, x, y) {
-        // Calculate tile position in tileset
-        const tilesPerRow = 4;
-        const tileX = (tileId - 1) % tilesPerRow;
-        const tileY = Math.floor((tileId - 1) / tilesPerRow);
+    createTileCanvas(tileId) {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.tileSize;
+        canvas.height = this.tileSize;
+        const ctx = canvas.getContext('2d');
         
-        renderer.drawTile(this.tileset, tileX, tileY, x, y, this.tileSize);
+        if (this.tileset) {
+            // Calculate tile position in tileset
+            const tilesPerRow = 4;
+            const tileX = (tileId - 1) % tilesPerRow;
+            const tileY = Math.floor((tileId - 1) / tilesPerRow);
+            
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(
+                this.tileset,
+                tileX * this.tileSize, tileY * this.tileSize, this.tileSize, this.tileSize,
+                0, 0, this.tileSize, this.tileSize
+            );
+        }
+        
+        return canvas;
     }
     
     serialize() {
@@ -169,4 +219,3 @@ export class Map {
         this.layers = data.layers;
     }
 }
-
