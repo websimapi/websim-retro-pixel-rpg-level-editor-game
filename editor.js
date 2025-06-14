@@ -75,7 +75,7 @@ export class Editor {
         document.getElementById(tool + 'Tool').classList.add('active');
     }
     
-    activate() {
+    async activate() {
         this.active = true;
         this.map = window.game.map;
         this.tileset = this.map.tileset;
